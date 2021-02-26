@@ -8,18 +8,19 @@ using ProtoBuf.Meta;
 
 namespace ProtoBuf.unittest.Serializers
 {
-    
     public class SubItems
     {
         [Fact]
         public void TestWriteSubItemWithShortBlob() {
-            Util.Test(pw =>
+            Util.Test((ref ProtoWriter.State st) =>
             {
-                ProtoWriter.WriteFieldHeader(5, WireType.String, pw);
-                SubItemToken token = ProtoWriter.StartSubItem(new object(), pw);
-                ProtoWriter.WriteFieldHeader(6, WireType.String, pw);
-                ProtoWriter.WriteBytes(new byte[] { 0, 1, 2, 3, 4, 5, 6, 7 }, pw);
-                ProtoWriter.EndSubItem(token, pw);
+                st.WriteFieldHeader(5, WireType.String);
+#pragma warning disable CS0618
+                SubItemToken token = st.StartSubItem(new object());
+                st.WriteFieldHeader(6, WireType.String);
+                st.WriteBytes(new byte[] { 0, 1, 2, 3, 4, 5, 6, 7 });
+                st.EndSubItem(token);
+#pragma warning restore CS0618
             }, "2A" // 5 * 8 + 2 = 42
              + "0A" // sub-item length = 10
              + "32" // 6 * 8 + 2 = 50 = 0x32

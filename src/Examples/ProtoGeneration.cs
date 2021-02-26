@@ -15,7 +15,7 @@ namespace Examples
 //        [Fact]
 //        public void GetProtoTest1()
 //        {
-//            var model = TypeModel.Create();
+//            var model = RuntimeTypeModel.Create();
 //            model.UseImplicitZeroDefaults = false;
 
 //            string proto = model.GetSchema(typeof(Test1));
@@ -32,10 +32,10 @@ namespace Examples
         [Fact]
         public void GetProtoTest2()
         {
-            var model = TypeModel.Create();
+            var model = RuntimeTypeModel.Create();
             model.UseImplicitZeroDefaults = false;
 
-            string proto = model.GetSchema(typeof(Test2));
+            string proto = model.GetSchema(typeof(Test2), ProtoSyntax.Proto2);
 
             Assert.Equal(
 @"syntax = ""proto2"";
@@ -45,7 +45,7 @@ message abc {
    required uint32 ghi = 2;
    required bytes def = 3;
 }
-", proto);
+", proto, ignoreLineEndingDifferences: true);
         }
 
         [DataContract(Name="abc")]
@@ -62,20 +62,20 @@ message abc {
         public void TestProtoGenerationWithDefaultString()
         {
 
-            string proto = Serializer.GetProto<MyClass>();
+            string proto = Serializer.GetProto<MyClass>(ProtoSyntax.Proto2);
 
             Assert.Equal(@"syntax = ""proto2"";
 
 message MyClass {
    optional string TestString = 1 [default = ""Test Test TEst""];
 }
-", proto);
+", proto, ignoreLineEndingDifferences: true);
         }
 
         [Fact]
         public void GenericsWithoutExplicitNamesShouldUseTheTypeName()
         {
-            string proto = Serializer.GetProto<ProtoGenerationTypes.BrokenProto.ExampleContract>();
+            string proto = Serializer.GetProto<ProtoGenerationTypes.BrokenProto.ExampleContract>(ProtoSyntax.Proto2);
 
             Assert.Equal(@"syntax = ""proto2"";
 package ProtoGenerationTypes.BrokenProto;
@@ -104,13 +104,13 @@ message Type2 {
    optional string Value3 = 1;
    optional string Value4 = 2;
 }
-", proto);
+", proto, ignoreLineEndingDifferences: true);
         }
 
         [Fact]
         public void SelfReferentialGenericsShouldNotExplode()
         {
-            string proto = Serializer.GetProto<ProtoGenerationTypes.SelfGenericProto.EvilParent>();
+            string proto = Serializer.GetProto<ProtoGenerationTypes.SelfGenericProto.EvilParent>(ProtoSyntax.Proto2);
 
             Assert.Equal(@"syntax = ""proto2"";
 package ProtoGenerationTypes.SelfGenericProto;
@@ -121,13 +121,13 @@ message EvilGeneric_EvilParent {
 message EvilParent {
    optional EvilGeneric_EvilParent X = 1;
 }
-", proto);
+", proto, ignoreLineEndingDifferences: true);
         }
 
         [Fact]
         public void ProtoForContractListsShouldGenerateSchema()
         {
-            string proto = GetSurrogateModel().GetSchema(typeof(List<MySurrogate>));
+            string proto = GetSurrogateModel().GetSchema(typeof(List<MySurrogate>), ProtoSyntax.Proto2);
             Assert.Equal(@"syntax = ""proto2"";
 package Examples;
 
@@ -136,96 +136,88 @@ message List_MySurrogate {
 }
 message MySurrogate {
 }
-", proto);
+", proto, ignoreLineEndingDifferences: true);
         }
 
         [Fact]
         public void ProtoForContractViaSurrogateListsShouldGenerateSchema()
         {
-            string proto = GetSurrogateModel().GetSchema(typeof(List<MyNonSurrogate>));
+            string proto = GetSurrogateModel().GetSchema(typeof(List<MyNonSurrogate>), ProtoSyntax.Proto2);
             Assert.Equal(@"syntax = ""proto2"";
 package Examples;
 
-message List_MyNonSurrogate {
+message List_MySurrogate {
    repeated MySurrogate items = 1;
 }
 message MySurrogate {
 }
-", proto);
+", proto, ignoreLineEndingDifferences: true);
         }
 
         [Fact]
         public void ProtoForPrimitiveListsShouldGenerateSchema()
         {
-            string proto = Serializer.GetProto<List<int>>();
+            string proto = Serializer.GetProto<List<int>>(ProtoSyntax.Proto2);
             Assert.Equal(@"syntax = ""proto2"";
 
 message List_Int32 {
    repeated int32 items = 1;
 }
-", proto);
+", proto, ignoreLineEndingDifferences: true);
         }
 
         [Fact]
         public void ProtoForPrimitiveShouldGenerateSchema()
         {
-            string proto = Serializer.GetProto<int>();
+            string proto = Serializer.GetProto<int>(ProtoSyntax.Proto2);
             Assert.Equal(@"syntax = ""proto2"";
 
 message Int32 {
    optional int32 value = 1;
 }
-", proto);
+", proto, ignoreLineEndingDifferences: true);
         }
         [Fact]
         public void ProtoForNullablePrimitiveShouldGenerateSchema()
         {
-            string proto = Serializer.GetProto<int?>();
+            string proto = Serializer.GetProto<int?>(ProtoSyntax.Proto2);
             Assert.Equal(@"syntax = ""proto2"";
 
 message Int32 {
    optional int32 value = 1;
 }
-", proto);
+", proto, ignoreLineEndingDifferences: true);
         }
         [Fact]
         public void ProtoForDictionaryShouldGenerateSchema()
         {
-            string proto = Serializer.GetProto<Dictionary<string,int>>();
+            string proto = Serializer.GetProto<Dictionary<string,int>>(ProtoSyntax.Proto2);
             Assert.Equal(@"syntax = ""proto2"";
 
 message Dictionary_String_Int32 {
-   repeated KeyValuePair_String_Int32 items = 1;
+   map<string, int32> items = 1;
 }
-message KeyValuePair_String_Int32 {
-   optional string Key = 1;
-   optional int32 Value = 2;
-}
-", proto);
+", proto, ignoreLineEndingDifferences: true);
         }
         [Fact]
         public void ProtoForDictionaryShouldIncludeSchemasForContainedTypes()
         {
-            string proto = Serializer.GetProto<Dictionary<string, MySurrogate>>();
+            string proto = Serializer.GetProto<Dictionary<string, MySurrogate>>(ProtoSyntax.Proto2);
             Assert.Equal(@"syntax = ""proto2"";
 package Examples;
 
 message Dictionary_String_MySurrogate {
-   repeated KeyValuePair_String_MySurrogate items = 1;
-}
-message KeyValuePair_String_MySurrogate {
-   optional string Key = 1;
-   optional MySurrogate Value = 2;
+   map<string, MySurrogate> items = 1;
 }
 message MySurrogate {
 }
-", proto);
+", proto, ignoreLineEndingDifferences: true);
         }
 
         [Fact]
         public void InheritanceShouldCiteBaseType()
         {
-            string proto = Serializer.GetProto<Dictionary<string, Cat>>();
+            string proto = Serializer.GetProto<Dictionary<string, Cat>>(ProtoSyntax.Proto2);
             Assert.Equal(@"syntax = ""proto2"";
 package Examples;
 
@@ -237,13 +229,9 @@ message Animal {
 message Cat {
 }
 message Dictionary_String_Cat {
-   repeated KeyValuePair_String_Cat items = 1;
+   map<string, Animal> items = 1;
 }
-message KeyValuePair_String_Cat {
-   optional string Key = 1;
-   optional Animal Value = 2;
-}
-", proto);
+", proto, ignoreLineEndingDifferences: true);
         }
 
         [ProtoContract, ProtoInclude(1, typeof(Cat))] public class Animal {}
@@ -253,19 +241,20 @@ message KeyValuePair_String_Cat {
         [Fact]
         public void ProtoForNonContractTypeShouldThrowException()
         {
-            Program.ExpectFailure<ArgumentException>(() =>
+            var aex = Program.ExpectFailure<ArgumentException>(() =>
             {
-                var model = TypeModel.Create();
+                var model = RuntimeTypeModel.Create();
                 model.AutoAddMissingTypes = false;
                 model.GetSchema(typeof(ProtoGenerationTypes.BrokenProto.Type2));
-            }, @"The type specified is not a contract-type
-Parameter name: type");
+            });
+            Assert.StartsWith(@"The type specified is not a contract-type", aex.Message);
+            Assert.Equal("type", aex.ParamName);
         }
 
         [Fact]
         public void BclImportsAreAddedWhenNecessary()
         {
-            string proto = Serializer.GetProto<ProtoGenerationTypes.BclImports.HasPrimitives>();
+            string proto = Serializer.GetProto<ProtoGenerationTypes.BclImports.HasPrimitives>(ProtoSyntax.Proto2);
 
             Assert.Equal(@"syntax = ""proto2"";
 package ProtoGenerationTypes.BclImports;
@@ -274,12 +263,12 @@ import ""protobuf-net/bcl.proto""; // schema for protobuf-net's handling of core
 message HasPrimitives {
    optional .bcl.DateTime When = 1;
 }
-", proto);
+", proto, ignoreLineEndingDifferences: true);
         }
 
         static TypeModel GetSurrogateModel() {
 
-            var model = TypeModel.Create();
+            var model = RuntimeTypeModel.Create();
             model.AutoAddMissingTypes = false;
             model.Add(typeof(MySurrogate), true);
             model.Add(typeof(MyNonSurrogate), false).SetSurrogate(typeof(MySurrogate));
@@ -292,31 +281,31 @@ message HasPrimitives {
         public void SchemaNameForSurrogateShouldBeSane()
         {
             
-            string proto = GetSurrogateModel().GetSchema(typeof(MySurrogate));
+            string proto = GetSurrogateModel().GetSchema(typeof(MySurrogate), ProtoSyntax.Proto2);
 
             Assert.Equal(@"syntax = ""proto2"";
 package Examples;
 
 message MySurrogate {
 }
-", proto);
+", proto, ignoreLineEndingDifferences: true);
         }
         [Fact]
         public void SchemaNameForNonSurrogateShouldBeSane()
         {
-            string proto = GetSurrogateModel().GetSchema(typeof(MyNonSurrogate));
+            string proto = GetSurrogateModel().GetSchema(typeof(MyNonSurrogate), ProtoSyntax.Proto2);
 
             Assert.Equal(@"syntax = ""proto2"";
 package Examples;
 
 message MySurrogate {
 }
-", proto);
+", proto, ignoreLineEndingDifferences: true);
         }
         [Fact]
         public void SchemaNameForTypeUsingSurrogatesShouldBeSane()
         {
-            string proto = GetSurrogateModel().GetSchema(typeof(UsesSurrogates));
+            string proto = GetSurrogateModel().GetSchema(typeof(UsesSurrogates), ProtoSyntax.Proto2);
 
             Assert.Equal(@"syntax = ""proto2"";
 package Examples;
@@ -327,12 +316,12 @@ message UsesSurrogates {
    optional MySurrogate A = 1;
    optional MySurrogate B = 2;
 }
-", proto);
+", proto, ignoreLineEndingDifferences: true);
         }
         [Fact]
         public void EntireSchemaShouldNotIncludeNonSurrogates()
         {
-            string proto = GetSurrogateModel().GetSchema(null);
+            string proto = GetSurrogateModel().GetSchema(null, ProtoSyntax.Proto2);
 
             Assert.Equal(@"syntax = ""proto2"";
 package Examples;
@@ -343,7 +332,7 @@ message UsesSurrogates {
    optional MySurrogate A = 1;
    optional MySurrogate B = 2;
 }
-", proto);
+", proto, ignoreLineEndingDifferences: true);
         }
 
 
@@ -405,20 +394,20 @@ message UsesSurrogates {
         public void InheritanceShouldListBaseType()
         {
             // all done on separate models in case of order dependencies, etc
-            var model = TypeModel.Create();
+            var model = RuntimeTypeModel.Create();
             Assert.Null(model[typeof(A)].BaseType);
 
-            model = TypeModel.Create();
+            model = RuntimeTypeModel.Create();
             Assert.Null(model[typeof(TestCase)].BaseType);
 
-            model = TypeModel.Create();
+            model = RuntimeTypeModel.Create();
             Assert.Equal(typeof(A), model[typeof(B)].BaseType.Type);
 
-            model = TypeModel.Create();
+            model = RuntimeTypeModel.Create();
             Assert.Equal(typeof(B), model[typeof(C)].BaseType.Type);
 
-            model = TypeModel.Create();
-            string s = model.GetSchema(typeof(TestCase));
+            model = RuntimeTypeModel.Create();
+            string s = model.GetSchema(typeof(TestCase), ProtoSyntax.Proto2);
             Assert.Equal(@"syntax = ""proto2"";
 package Examples;
 
@@ -440,7 +429,7 @@ message C {
 message TestCase {
    optional A Data = 10;
 }
-", s);
+", s, ignoreLineEndingDifferences: true);
         }
     }
 }

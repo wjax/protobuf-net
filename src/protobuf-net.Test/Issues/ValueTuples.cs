@@ -1,10 +1,11 @@
-﻿using System;
+﻿using ProtoBuf.Meta;
+using ProtoBuf.unittest;
+using System;
 using System.IO;
 using Xunit;
 
 namespace ProtoBuf.Issues
 {
-
     public class ValueTuples
     {
         [Fact]
@@ -12,12 +13,20 @@ namespace ProtoBuf.Issues
         {
             var foo = GetNamedTupleData();
 
-            var bar = Serializer.DeepClone(foo);
-            Assert.Equal(123, bar.a);
-            Assert.Equal("def", bar.b);
-            Assert.True(bar.c.d);
-            Assert.Equal("abc,def", string.Join(",", bar.c.e));
+            var (a, b, c) = Serializer.DeepClone(foo);
+            Assert.Equal(123, a);
+            Assert.Equal("def", b);
+            Assert.True(c.d);
+            Assert.Equal("abc,def", string.Join(",", c.e));
+        }
 
+        [Fact]
+        public void CheckLayoutEquivalence_Valid()
+        {
+            var data = GetNamedTupleData();
+            var model = RuntimeTypeModel.Create();
+            model.Add(data.GetType());
+            PEVerify.CompileAndVerify(model);
         }
 
         [Fact]
@@ -29,7 +38,7 @@ namespace ProtoBuf.Issues
                 Serializer.Serialize(ms, GetNamedTupleData());
                 hex = BitConverter.ToString(ms.ToArray()); // GetBuffer() not available on all TFMs
             }
-            Assert.Equal(@"08-7B-12-03-64-65-66-1A-0C-08-01-12-03-61-62-63-12-03-64-65-66", hex);
+            Assert.Equal("08-7B-12-03-64-65-66-1A-0C-08-01-12-03-61-62-63-12-03-64-65-66", hex);
             // 08-7B: field 1: 123
             // 12-03: field 2, 3 bytes
             //   64-65-66: "abc"

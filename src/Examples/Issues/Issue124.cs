@@ -1,16 +1,17 @@
 ﻿#if !COREFX
+using ProtoBuf;
+using ProtoBuf.Meta;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
-using Xunit;
-using ProtoBuf;
 using System.Windows.Media;
-using ProtoBuf.Meta;
+using Xunit;
 
 namespace Examples.Issues
 {
-    
+
     public class Issue124
     {
         // note this is a simplified example that 
@@ -36,25 +37,36 @@ namespace Examples.Issues
             public Color Color { get; set; }
         }
 
-        [Fact]
+        [SkippableFact]
         public void TestMediaColorDirect()
         {
-            var model = TypeModel.Create();
-            model.Add(typeof(Color), false).Add("A","R","G","B");
+            Skip.IfNot(RuntimeInformation.IsOSPlatform(OSPlatform.Windows));
+            AvoidJit();
+            static void AvoidJit()
+            {
+                var model = RuntimeTypeModel.Create();
+                model.Add(typeof(Color), false).Add("A", "R", "G", "B");
 
-            RoundtripTypeWithColor(model);
+                RoundtripTypeWithColor(model);
+            }
         }
 
-        [Fact]
+        [SkippableFact]
         public void TestMediaColorSurrogate()
         {
-            var model = TypeModel.Create();
-            model.Add(typeof(Color), false).SetSurrogate(typeof(MyColor));
+            Skip.IfNot(RuntimeInformation.IsOSPlatform(OSPlatform.Windows));
+            AvoidJit();
 
-            RoundtripTypeWithColor(model);
+            static void AvoidJit()
+            {
+                var model = RuntimeTypeModel.Create();
+                model.Add(typeof(Color), false).SetSurrogate(typeof(MyColor));
+
+                RoundtripTypeWithColor(model);
+            }
         }
 
-        private void RoundtripTypeWithColor(RuntimeTypeModel model)
+        private static void RoundtripTypeWithColor(RuntimeTypeModel model)
         {
             var orig = new TypeWithColor
             {

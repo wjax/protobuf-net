@@ -12,16 +12,12 @@ namespace ProtoBuf.Issues
         public void Execute(byte boolvalue, bool expected)
         {
             byte[] buffer = { 8, boolvalue };
-            using (var ms = new MemoryStream(buffer))
-            {
-                using (var protoReader = ProtoReader.Create(ms, null))
-                {
-                    var fieldNumber = protoReader.ReadFieldHeader();
-                    var value = protoReader.ReadBoolean();
+            using var ms = new MemoryStream(buffer);
+            using var state = ProtoReader.State.Create(ms, null);
+            var fieldNumber = state.ReadFieldHeader();
+            var value = state.ReadBoolean();
 
-                    Assert.Equal(expected, value);
-                }
-            }
+            Assert.Equal(expected, value);
         }
     }
 }

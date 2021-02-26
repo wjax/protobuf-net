@@ -1,8 +1,5 @@
 {
   "sdk": {
-    "version": "2.2.202"
-  },
-  "msbuild-sdks": {
-    "MSBuild.Sdk.Extras": "2.0.24"
+    "allowPrerelease": false
   }
 }

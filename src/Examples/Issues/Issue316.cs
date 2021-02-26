@@ -17,12 +17,12 @@ namespace Examples.Issues
         [Fact]
         public void Execute()
         {
-            var runtimeTypeModel = TypeModel.Create();
+            var runtimeTypeModel = RuntimeTypeModel.Create();
             var myExceptionType = typeof(MyException);
             var metaType = runtimeTypeModel.Add(myExceptionType, false);
             metaType.SetSurrogate(typeof(BinarySerializationSurrogate<>).MakeGenericType(myExceptionType));
 
-            string proto = runtimeTypeModel.GetSchema(null);
+            string proto = runtimeTypeModel.GetSchema(null, ProtoSyntax.Proto2);
 
             Assert.Equal(@"syntax = ""proto2"";
 package Examples.Issues;
@@ -30,7 +30,7 @@ package Examples.Issues;
 message BinarySerializationSurrogate_MyException {
    optional bytes objectData = 1;
 }
-", proto);
+", proto, ignoreLineEndingDifferences: true);
         }
 
         class MyException : Exception { }

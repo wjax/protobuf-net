@@ -1,11 +1,13 @@
-﻿using System;
+﻿#pragma warning disable RCS1213
+using System;
 using ProtoBuf;
 using System.Runtime.Serialization;
+using System.IO;
+
 #if !COREFX
 
 using System.Collections.Generic;
 using System.Data.Linq;
-using System.IO;
 using System.Linq;
 
 using Xunit;
@@ -48,11 +50,11 @@ namespace DAL
         }
 #endif
     }
-#if !COREFX
-    
+
+
     public class NWindTests
     {
-        static readonly string[] nwindPaths = { @"NWind\nwind.proto.bin", @"Tools\nwind.proto.bin", @"nwind.proto.bin" };
+        private static readonly string[] nwindPaths = { @"NWind\nwind.proto.bin", @"Tools\nwind.proto.bin", "nwind.proto.bin" };
         public static string GetNWindBinPath()
         {
             for (int i = 0; i < nwindPaths.Length; i++)
@@ -61,38 +63,35 @@ namespace DAL
             }
             throw new FileNotFoundException("Unable to locate nwind.proto.bin under " + Directory.GetCurrentDirectory());
         }
+#if !COREFX
         public static T LoadDatabaseFromFile<T>(TypeModel model)
             where T : class,new()
         {
             // otherwise...
-            using (Stream fs = File.OpenRead(NWindTests.GetNWindBinPath()))
-            {
-                return (T)model.Deserialize(fs, null, typeof(T));
-            }
+            using Stream fs = File.OpenRead(NWindTests.GetNWindBinPath());
+#pragma warning disable CS0618
+            return (T)model.Deserialize(fs, null, typeof(T));
+#pragma warning restore CS0618
         }
-        
+
         [Fact]
         public void LoadTestDefaultModel()
         {
             Database db = LoadDatabaseFromFile<Database>(RuntimeTypeModel.Default);
             DbMetrics("Database", db);
-
         }
 
         [Fact]
         public void LoadTestCustomModel()
         {
-            var model = TypeModel.Create();
-            Database db;
-            
-            db = LoadDatabaseFromFile<Database>(model);
+            var model = RuntimeTypeModel.Create();
+            Database db = LoadDatabaseFromFile<Database>(model);
             DbMetrics("Database", db);
 
             model.CompileInPlace();
             db = LoadDatabaseFromFile<Database>(model);
             DbMetrics("Database", db);
 
-            
             db = LoadDatabaseFromFile<Database>(model.Compile());
             DbMetrics("Database", db);
 
@@ -105,29 +104,30 @@ namespace DAL
         public void PerfTestDb()
         {
             byte[] blob = File.ReadAllBytes(NWindTests.GetNWindBinPath());
-            using (MemoryStream ms = new MemoryStream(blob))
+            using MemoryStream ms = new MemoryStream(blob);
+            var model = RuntimeTypeModel.Create();
+            Type type = typeof(Database);
+#pragma warning disable CS0618
+            model.Deserialize(ms, null, type);
+#pragma warning restore CS0618
+            var compiled = model.Compile();
+            /*erializer.PrepareSerializer<Database>();
+            Serializer.Deserialize<Database>(ms);*/
+            Stopwatch watch = Stopwatch.StartNew();
+            for (int i = 0; i < 1000; i++)
             {
-                var model = TypeModel.Create();
-                Type type = typeof(Database);
-                model.Deserialize(ms, null, type);
-                var compiled = model.Compile();
-                /*erializer.PrepareSerializer<Database>();
-                Serializer.Deserialize<Database>(ms);*/
-                Stopwatch watch = Stopwatch.StartNew();
-                for (int i = 0; i < 1000; i++)
-                {
-                    ms.Position = 0;
-                    //Serializer.Deserialize<Database>(ms);
-                    compiled.Deserialize(ms, null, type);
-                }
-                watch.Stop();
-                Console.WriteLine(watch.ElapsedMilliseconds);
-                if(Debugger.IsAttached)
-                {
-                    Console.WriteLine("(press any key)");
-                    Console.ReadKey();
-                }
-
+                ms.Position = 0;
+                //Serializer.Deserialize<Database>(ms);
+#pragma warning disable CS0618
+                compiled.Deserialize(ms, null, type);
+#pragma warning restore CS0618
+            }
+            watch.Stop();
+            Console.WriteLine(watch.ElapsedMilliseconds);
+            if (Debugger.IsAttached)
+            {
+                Console.WriteLine("(press any key)");
+                Console.ReadKey();
             }
         }
 
@@ -136,11 +136,10 @@ namespace DAL
         {
             // just show it can do *something*!
 
-            string proto = Serializer.GetProto<Database>();
-
+            _ = Serializer.GetProto<Database>();
         }
 
-        static void DbMetrics(string caption, Database database)
+        private static void DbMetrics(string caption, Database database)
         {
             int orders = database.Orders.Count;
             int lines = database.Orders.SelectMany(ord => ord.Lines).Count();
@@ -151,9 +150,10 @@ namespace DAL
 
             Console.WriteLine("{0}\torders {1}; lines {2}; units {3}; value {4:C}",
                 caption, orders, lines, totalQty, totalValue);
-
         }
-        static Database ReadFromFile(string path)
+
+#pragma warning disable IDE0051 // Remove unused private members
+        private static Database ReadFromFile(string path)
         {
             Database database;
             using (Stream fs = File.OpenRead(path))
@@ -163,26 +163,26 @@ namespace DAL
             }
             return database;
         }
-        static void WriteToFile(string path, Database database)
+        private static void WriteToFile(string path, Database database)
         {
-            using (Stream fs = File.Create(path))
-            {
-                Serializer.Serialize(fs, database);
-                fs.Close();
-            }
+            using Stream fs = File.Create(path);
+            Serializer.Serialize(fs, database);
+            fs.Close();
         }
-
-        static Database ReadFromDatabase(NorthwindDataContext ctx) {
+        private static Database ReadFromDatabase(NorthwindDataContext ctx)
+        {
             Database db = new Database();
-        
+
             DataLoadOptions opt = new DataLoadOptions();
             opt.AssociateWith<Order>(order => order.Lines);
             ctx.LoadOptions = opt;
             db.Orders.AddRange(ctx.Orders);
 
-            return db;            
+            return db;
         }
-    }
+#pragma warning restore IDE0051 // Remove unused private members
 #endif
+    }
+
 }
 

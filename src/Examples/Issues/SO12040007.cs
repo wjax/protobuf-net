@@ -4,6 +4,7 @@ using ProtoBuf.Meta;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Examples.Issues
@@ -23,7 +24,7 @@ namespace Examples.Issues
         [Fact]
         public void BasicVersusContract()
         {
-            var model = TypeModel.Create();
+            var model = RuntimeTypeModel.Create();
             Assert.True(model.CanSerialize(typeof(int)), "int Any");
             Assert.True(model.CanSerializeBasicType(typeof(int)), "int BasicType");
             Assert.False(model.CanSerializeContractType(typeof(int)), "int ContractType");
@@ -56,7 +57,7 @@ namespace Examples.Issues
         [Fact]
         public void BasicVersusContractArrays()
         {
-            var model = TypeModel.Create();
+            var model = RuntimeTypeModel.Create();
             Assert.True(model.CanSerialize(typeof(int[])), "int Any");
             Assert.True(model.CanSerializeBasicType(typeof(int[])), "int BasicType");
             Assert.False(model.CanSerializeContractType(typeof(int[])), "int ContractType");
@@ -89,7 +90,7 @@ namespace Examples.Issues
         [Fact]
         public void BasicVersusContractLists()
         {
-            var model = TypeModel.Create();
+            var model = RuntimeTypeModel.Create();
             Assert.True(model.CanSerialize(typeof(List<int>)), "int Any");
             Assert.True(model.CanSerializeBasicType(typeof(List<int>)), "int BasicType");
             Assert.False(model.CanSerializeContractType(typeof(List<int>)), "int ContractType");
@@ -121,7 +122,7 @@ namespace Examples.Issues
         [Fact]
         public void TestPrimitiveCanSerialize()
         {
-            var model = TypeModel.Create();
+            var model = RuntimeTypeModel.Create();
             Assert.True(model.CanSerialize(typeof(int)));
             Assert.True(model.CanSerialize(typeof(int?)));
             Assert.True(model.CanSerialize(typeof(short)));
@@ -131,7 +132,14 @@ namespace Examples.Issues
             Assert.True(model.CanSerialize(typeof(DateTime)));
             Assert.True(model.CanSerialize(typeof(DateTime?)));
 #if !COREFX
-            Assert.False(model.CanSerialize(typeof(System.Windows.Media.Color)));
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                AvoidJit(model);
+                static void AvoidJit(RuntimeTypeModel model)
+                {
+                    Assert.False(model.CanSerialize(typeof(System.Windows.Media.Color)));
+                }
+            }
 #endif
             Assert.False(model.CanSerialize(typeof(DateTimeOffset)));
             Assert.False(model.CanSerialize(typeof(Action)));
@@ -140,7 +148,7 @@ namespace Examples.Issues
         [Fact]
         public void TestPrimitiveArraysCanSerialize()
         {
-            var model = TypeModel.Create();
+            var model = RuntimeTypeModel.Create();
             Assert.True(model.CanSerialize(typeof(int[])), "int");
             Assert.True(model.CanSerialize(typeof(int?[])), "int?");
             Assert.True(model.CanSerialize(typeof(short[])), "short");
@@ -150,7 +158,14 @@ namespace Examples.Issues
             Assert.True(model.CanSerialize(typeof(DateTime[])), "DateTime");
             Assert.True(model.CanSerialize(typeof(DateTime?[])), "DateTime?");
 #if !COREFX
-            Assert.False(model.CanSerialize(typeof(System.Windows.Media.Color[])), "Color");
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                AvoidJit(model);
+                static void AvoidJit(TypeModel model)
+                {
+                    Assert.False(model.CanSerialize(typeof(System.Windows.Media.Color[])), "Color");
+                }
+            }
 #endif
             Assert.False(model.CanSerialize(typeof(DateTimeOffset[])), "DateTimeOffset");
             Assert.False(model.CanSerialize(typeof(Action[])), "Action");
@@ -158,7 +173,7 @@ namespace Examples.Issues
         [Fact]
         public void TestPrimitiveNestedArraysCannotSerialize()
         {
-            var model = TypeModel.Create();
+            var model = RuntimeTypeModel.Create();
             Assert.False(model.CanSerialize(typeof(int[][])));
             Assert.False(model.CanSerialize(typeof(int?[][])));
             Assert.False(model.CanSerialize(typeof(short[][])));
@@ -168,7 +183,14 @@ namespace Examples.Issues
             Assert.False(model.CanSerialize(typeof(DateTime[][])));
             Assert.False(model.CanSerialize(typeof(DateTime?[][])));
 #if !COREFX
-            Assert.False(model.CanSerialize(typeof(System.Windows.Media.Color[][])));
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                AvoidJit(model);
+            }
+            static void AvoidJit(TypeModel model)
+            {
+                Assert.False(model.CanSerialize(typeof(System.Windows.Media.Color[][])));
+            }
 #endif
             Assert.False(model.CanSerialize(typeof(DateTimeOffset[][])));
             Assert.False(model.CanSerialize(typeof(Action[][])));
@@ -176,7 +198,7 @@ namespace Examples.Issues
         [Fact]
         public void TestPrimitiveMultidimArraysCannotSerialize()
         {
-            var model = TypeModel.Create();
+            var model = RuntimeTypeModel.Create();
             Assert.False(model.CanSerialize(typeof(int[,])));
             Assert.False(model.CanSerialize(typeof(int?[,])));
             Assert.False(model.CanSerialize(typeof(short[,])));
@@ -186,7 +208,14 @@ namespace Examples.Issues
             Assert.False(model.CanSerialize(typeof(DateTime[,])));
             Assert.False(model.CanSerialize(typeof(DateTime?[,])));
 #if !COREFX
-            Assert.False(model.CanSerialize(typeof(System.Windows.Media.Color[,])));
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                AvoidJit(model);
+            }
+            static void AvoidJit(TypeModel model)
+            {
+                Assert.False(model.CanSerialize(typeof(System.Windows.Media.Color[,])));
+            }
 #endif
             Assert.False(model.CanSerialize(typeof(DateTimeOffset[,])));
             Assert.False(model.CanSerialize(typeof(Action[,])));

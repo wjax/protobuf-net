@@ -8,7 +8,6 @@ using NHibernate.Engine;
 
 namespace ProtoBuf.unittest.ThirdParty
 {
-
     public class NHibernateProxies
     {
         public class FooWrapper
@@ -125,7 +124,7 @@ namespace ProtoBuf.unittest.ThirdParty
 
         static RuntimeTypeModel BuildModel()
         {
-            var model = TypeModel.Create();
+            var model = RuntimeTypeModel.Create();
             model.Add(typeof(FooWrapper), false).Add("Foo");
             model.Add(typeof(Foo), false).Add("Id", "Name");
             return model;
@@ -221,7 +220,9 @@ namespace ProtoBuf.unittest.ThirdParty
 
         }
 
+#pragma warning disable IDE0060 // Remove unused parameter
         private static void CompareFoo(Foo original, Foo clone, string message)
+#pragma warning restore IDE0060 // Remove unused parameter
         {
             Assert.NotNull(clone); //, message);
             Assert.NotSame(original, clone);
